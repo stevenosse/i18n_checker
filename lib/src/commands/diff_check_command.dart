@@ -95,7 +95,7 @@ class DiffCheckCommand extends Command<int> {
     var mismatchFound = false;
 
     for (final line in referenceContent) {
-      final key = extractKeyFromLine(line);
+      final key = _extractKeyFromLine(line);
 
       for (final fileEntity in files) {
         final file = File(fileEntity.path);
@@ -108,10 +108,30 @@ class DiffCheckCommand extends Command<int> {
       }
     }
 
+    _logger.write('\n');
+    // Find existing keys in other files that are not in the reference file
+    for (final fileEntity in files) {
+      final file = File(fileEntity.path);
+      final fileContent = file.readAsLinesSync()
+        ..removeLast()
+        ..removeAt(0);
+
+      for (final line in fileContent) {
+        final key = _extractKeyFromLine(line);
+
+        if (!referenceContent.any((line) => line.contains(key))) {
+          mismatchFound = true;
+          _logger.err(
+            '❗ - Key $key from ${file.path} was not found in $refFilePath file',
+          );
+        }
+      }
+    }
+
     return mismatchFound;
   }
 
-  String extractKeyFromLine(String line) {
+  String _extractKeyFromLine(String line) {
     return line.split(':').first.trim();
   }
 }
