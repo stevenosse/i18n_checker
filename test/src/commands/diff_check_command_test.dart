@@ -7,7 +7,6 @@ void main() {
 
   setUp(() {
     command = DiffCheckCommand(
-
       logger: Logger(),
     );
   });
