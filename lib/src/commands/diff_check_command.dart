@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 const _arbFolderArgName = 'arb-folder';
 const _referenceFileName = 'reference-file';
+const _ignoreFlagName = 'ignore';
 
 /// {@template sample_command}
 ///
@@ -27,7 +28,8 @@ class DiffCheckCommand extends Command<int> {
         _referenceFileName,
         abbr: 'r',
         help: 'Reference file',
-      );
+      )
+      ..addFlag(_ignoreFlagName, abbr: 'i', help: 'Ignore missing keys');
   }
 
   @override
@@ -44,6 +46,18 @@ class DiffCheckCommand extends Command<int> {
   Future<int> run() async {
     final arbFolderPath = argResults![_arbFolderArgName] as String?;
     final referenceFile = argResults![_referenceFileName] as String?;
+    final filesToIgnore = (argResults![_ignoreFlagName] as String? ?? '').split(',').map((e) => '$arbFolderPath/$e');
+
+    if (filesToIgnore.isNotEmpty) {
+      _logger.warn('⚠️ - Ignoring files: $filesToIgnore');
+
+      for (final file in filesToIgnore) {
+        if (!File('$arbFolderPath/$file').existsSync()) {
+          _logger.err('❌ - File $file does not exist');
+          return ExitCode.usage.code;
+        }
+      }
+    }
 
     if (arbFolderPath == null || referenceFile == null) {
       _logger.err('❌ - You need to specify both arb folder and reference file');
@@ -67,7 +81,11 @@ class DiffCheckCommand extends Command<int> {
       return ExitCode.usage.code;
     }
 
-    if (_findKeyMismatches(arbFolderPath, refFilePath)) {
+    if (_findKeyMismatches(
+      arbFolderPath: arbFolderPath,
+      refFilePath: refFilePath,
+      filesToIgnore: [...filesToIgnore],
+    )) {
       return ExitCode.usage.code;
     }
 
@@ -82,7 +100,11 @@ class DiffCheckCommand extends Command<int> {
     });
   }
 
-  bool _findKeyMismatches(String arbFolderPath, String refFilePath) {
+  bool _findKeyMismatches({
+    required String arbFolderPath,
+    required String refFilePath,
+    List<String> filesToIgnore = const [],
+  }) {
     final referenceContent = File(refFilePath).readAsLinesSync()
       ..removeLast()
       ..removeAt(0);
@@ -90,7 +112,7 @@ class DiffCheckCommand extends Command<int> {
     final i18nDir = Directory(arbFolderPath);
     final files = i18nDir.listSync().where((value) {
       return p.extension(value.path) == '.arb' && value.path != refFilePath;
-    });
+    }).takeWhile((value) => !filesToIgnore.contains(value.path));
 
     var mismatchFound = false;
 
