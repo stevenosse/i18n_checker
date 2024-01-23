@@ -1,6 +1,6 @@
 # 0.0.3
 - Update dependencies
-- Add `--ignore` option to ignore keys
+- Add `--ignore` option to ignore files
 
 # 0.0.2
 - Find existing keys in other files that are not in the reference file

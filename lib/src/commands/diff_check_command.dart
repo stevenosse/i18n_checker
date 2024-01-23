@@ -46,7 +46,9 @@ class DiffCheckCommand extends Command<int> {
   Future<int> run() async {
     final arbFolderPath = argResults![_arbFolderArgName] as String?;
     final referenceFile = argResults![_referenceFileName] as String?;
-    final filesToIgnore = (argResults![_ignoreFlagName] as String? ?? '').split(',').map((e) => '$arbFolderPath/$e');
+    final filesToIgnore = (argResults![_ignoreFlagName] as String? ?? '')
+        .split(',')
+        .map((e) => '$arbFolderPath/$e');
 
     if (filesToIgnore.isNotEmpty) {
       _logger.warn('⚠️ - Ignoring files: $filesToIgnore');
